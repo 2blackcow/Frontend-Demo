@@ -74,10 +74,9 @@ jobs:
 
       # Slack 알림 설정 (배포 완료 후 Slack 알림 전송)
       - name: Send Deployment Notification to Slack
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}  # GitHub Secrets에서 가져온 Webhook URL
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text": "배포 완료! 환경: '${{ github.ref }}', 커밋 SHA1 해시값 : '${{ github.sha }}', 커밋 메시지 : '${{ github.event.head_commit.message }}'"}' \
+          --data '{"text": "배포 완료! 환경 : '${{ github.ref }}', 커밋 SHA1 해시값 : '${{ github.sha }}', 커밋 메시지 : '${{ github.event.head_commit.message }}'"}' \
           $SLACK_WEBHOOK_URL
