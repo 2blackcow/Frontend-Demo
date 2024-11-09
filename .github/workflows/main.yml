@@ -56,28 +56,28 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # Staging 배포 설정
+      # Staging 배포 설정 (GitHub Pages)
       - name: Deploy to Staging (GitHub Pages)
         if: github.ref == 'refs/heads/staging'
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.MY_GITHUB_TOKEN }}  # MY_GITHUB_TOKEN 사용
           publish_dir: ./dist
 
-      # Production 배포 설정
+      # Production 배포 설정 (GitHub Pages)
       - name: Deploy to Production (GitHub Pages)
         if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.MY_GITHUB_TOKEN }}  # MY_GITHUB_TOKEN 사용
           publish_dir: ./dist
 
-      # Slack 알림 설정
+      # Slack 알림 설정 (배포 완료 후 Slack 알림 전송)
       - name: Send Deployment Notification to Slack
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text": "배포 완료! 환경: '${{ github.ref }}', 커밋: '${{ github.sha }}'"}' \
+          --data '{"text": "배포 완료! 환경: '${{ github.ref }}', 커밋 SHA1 해시값 : '${{ github.sha }}', 커밋 메시지 : '${{ github.event.head_commit.message }}'"}' \
           $SLACK_WEBHOOK_URL
