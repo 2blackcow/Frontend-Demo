@@ -1,8 +1,10 @@
 {
+  "homepage": "https://2blackcow.github.io/Frontend-Demo",
   "name": "vue-demosite",
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "deploy": "npm run build && gh-pages -d dist",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
@@ -23,6 +25,7 @@
     "@vue/eslint-config-typescript": "^9.1.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
+    "gh-pages": "^6.2.0",
     "typescript": "~4.5.5"
   }
 }
