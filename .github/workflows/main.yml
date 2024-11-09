@@ -1,58 +1,60 @@
-name: Vue.js CI/CD Workflow
+name: Deploy # Workflow 이름
 
-# 워크플로우가 트리거되는 이벤트 정의
-on:
+on: # main 브랜치에 푸시할 때 트리거됨
   push:
     branches:
-      - main  # main 브랜치에 푸시될 때 트리거
-  pull_request:
-    branches:
-      - main  # main 브랜치로 PR이 생성될 때 트리거
+      - main
 
 jobs:
-  # Pull Request 시 테스트 및 빌드 작업
-  build-and-test:
+  build: # 첫 번째 작업: 빌드
+    name: Build
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'  # PR일 때만 실행
+
     steps:
-      - name: Checkout repository
+      - name: Checkout repo # 저장소 체크아웃
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node # Node.js 설치
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: "20"
 
-      - name: Install dependencies
+      - name: Install dependencies # 패키지 설치
         run: npm install
 
-      - name: Build project
+      - name: Print working directory # 현재 작업 디렉토리 출력
+        run: pwd
+
+      - name: List project files before build # 빌드 전 파일 구조 확인
+        run: ls -al
+
+      - name: Build project # 프로젝트 빌드
         run: npm run build
 
-      - name: Run tests (optional)
-        run: npm run test  # 테스트 스크립트가 있을 경우 실행
+      - name: List build files # 빌드 후 파일 확인
+        run: ls -al ./dist
 
-  # Push 시 빌드 및 배포 작업
-  build-and-deploy:
+      - name: Upload production-ready build files # 빌드된 파일 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-files
+          path: ./dist
+
+  deploy: # 두 번째 작업: 배포
+    name: Deploy
+    needs: build # build 작업이 완료되어야 실행됨
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # push일 때만 실행
+    if: github.ref == 'refs/heads/main' # 브랜치 확인
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Download artifact # 빌드된 파일 다운로드
+        uses: actions/download-artifact@v4
         with:
-          node-version: '18.x'
+          name: production-files
+          path: ./dist
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages # GitHub Pages로 배포
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.MY_GITHUB_TOKEN }}
-          publish_dir: ./dist  # 빌드된 파일이 저장된 디렉토리
+          publish_dir: ./dist
