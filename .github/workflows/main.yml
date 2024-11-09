@@ -1,47 +1,83 @@
 name: Vue.js CI/CD Workflow
-# 워크플로우가 트리거되는 이벤트 정의
+
 on:
   push:
     branches:
-      - main  # main 브랜치에 푸시될 때 트리거
+      - main
+      - staging
   pull_request:
     branches:
-      - main  # main 브랜치로 PR이 생성될 때 트리거
+      - main
+
 jobs:
   # Pull Request 시 테스트 및 빌드 작업
   build-and-test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'  # PR일 때만 실행
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
+
       - name: Install dependencies
         run: npm install
+
+      - name: Run tests
+        run: npm run test  # 테스트 스크립트 실행
+
       - name: Build project
         run: npm run build
-      - name: Run tests (optional)
-        run: npm run test  # 테스트 스크립트가 있을 경우 실행
-  # Push 시 빌드 및 배포 작업
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: lhci autorun  # 기본 설정으로 Lighthouse CI 실행
+
+  # Push 시 빌드 및 배포 작업 (브랜치에 따라 스테이징/프로덕션 배포)
   build-and-deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # push일 때만 실행
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
+
       - name: Install dependencies
         run: npm install
+
       - name: Build project
         run: npm run build
-      - name: Deploy to GitHub Pages
+
+      # Staging 배포 설정
+      - name: Deploy to Staging (GitHub Pages)
+        if: github.ref == 'refs/heads/staging'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist  # 빌드된 파일이 저장된 디렉토리
+          publish_dir: ./dist
+
+      # Production 배포 설정
+      - name: Deploy to Production (GitHub Pages)
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+      # Slack 알림 설정
+      - name: Send Deployment Notification to Slack
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "배포 완료! 환경: '${{ github.ref }}', 커밋: '${{ github.sha }}'"}' \
+          $SLACK_WEBHOOK_URL
