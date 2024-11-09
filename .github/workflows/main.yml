@@ -1,0 +1,58 @@
+name: Vue.js CI/CD Workflow
+
+# 워크플로우가 트리거되는 이벤트 정의
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시될 때 트리거
+  pull_request:
+    branches:
+      - main  # main 브랜치로 PR이 생성될 때 트리거
+
+jobs:
+  # Pull Request 시 테스트 및 빌드 작업
+  build-and-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'  # PR일 때만 실행
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests (optional)
+        run: npm run test  # 테스트 스크립트가 있을 경우 실행
+
+  # Push 시 빌드 및 배포 작업
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'  # push일 때만 실행
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist  # 빌드된 파일이 저장된 디렉토리
